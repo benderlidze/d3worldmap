@@ -125,7 +125,7 @@
                 .attr('class', 'map');
 
             Promise.all([
-                d3.json('http://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
+                d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
                 d3.csv('data.csv')
             ]).then(
                 d => ready(null, d[0], d[1])
