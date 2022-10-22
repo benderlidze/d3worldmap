@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicator test</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0px;
+            height: 0px;
+        }
+
+        .parent {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .child {
+            border: 1px solid #ccc;
+        }
+
+        div.tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+        }
+
+        .highlight {
+            fill: steelblue;
+        }
+
+        .hover {
+            fill: #69c !important;
+            stroke: #333 !important;
+            stroke-width: 2px !important;
+        }
+    </style>
+</head>
+
+
+<body>
+
+
+    <div id="main">
+        <div class="parent">
+            <div id="map4" class="child" style="width:800px; height:800px;"></div>
+        </div>
+    </div>
+
+    <script>
+
+        createMap("map4", 'Indicator 4')
+
+
+
+        function createMap(divId, colummnId) {
+
+            var svgDiv = document.getElementById(divId).getBoundingClientRect();
+            let width = svgDiv.width;
+            let height = svgDiv.height;
+            const radius = width / 2 - 100
+
+            const svg = d3.select("#" + divId)
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('class', 'map');
+
+            Promise.all([
+                d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
+                d3.csv('data.csv')
+            ]).then(
+                d => ready(null, d[0], d[1])
+            );
+
+            async function ready(error, data, csvData) {
+
+                data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
+
+                var projection = d3.geoMercator().fitSize([width, height], data);
+                var path = d3.geoPath().projection(projection);
+
+                const country = {};
+                // console.log('csvData', csvData);
+                csvData.forEach(d => { country[d.ISO3] = +d[colummnId]; });
+                data.features.forEach(d => { d.val = country[d.id] });
+
+                svg.append('g')
+                    .attr('class', 'countries')
+                    .selectAll('path')
+                    .data(data.features)
+                    .enter().append('path')
+                    .attr('d', path)
+                    .style('fill', "#ccc")
+                    .style('stroke', 'white')
+                    .style('opacity', 0.8)
+                    .style('stroke-width', 0.3)
+
+                svg.append("circle")
+                    .style("stroke", "orange")
+                    .style("stroke-width", "2")
+                    .style("fill", "rgba(0,0,0,0)")
+                    .attr("r", radius - 20)
+                    .attr("cx", width / 2)
+                    .attr("cy", height / 2);
+
+
+
+                const cities = await d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-MDSXqcapGi1jsi_83jiLkIMLV38w43ad6iP3EWxNET9pORPp5AmInoQEM819EVED7dDdWgKMIpRx/pub?output=csv")
+
+                const chartData = Array.from(cities).map(i => {
+                    return {
+                        name: i.name, ...i, size: 10
+                    }
+                })
+
+                console.log('chartData', chartData);
+
+
+                const arc = d3.arc()
+                    .outerRadius(radius - 50)
+                    .innerRadius(radius);
+
+                const labelArc = d3.arc()
+                    .innerRadius(radius - 20)
+                    .outerRadius(radius)
+
+                // Compute the position of each group on the pie:
+                // const pie = d3.pie()
+                //     .value(function (d) { return d.value.size })
+
+                //Turn the pie chart 90 degrees counter clockwise, so it starts at the left
+                const pie = d3.pie()
+                    .startAngle(-90 * Math.PI / 180)
+                    .endAngle(-90 * Math.PI / 180 + 2 * Math.PI)
+                    .value(function (d) { return  d.value.size ; })
+                    .padAngle(.01)
+                    .sort(null);
+
+                // prepare a helper function
+                const lineFunc = d3.line()
+                    .x(function (d) { return d.x })
+                    .y(function (d) { return d.y })
+
+
+                const labels = svg.append('g')
+                    .attr('class', 'labels')
+                    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+                labels.selectAll('whatever')
+                    .data(pie(d3.entries(chartData)))
+                    .enter()
+                    .append('path')
+                    .attr('d', arc
+                    )
+                    .attr("stroke", "black")
+                    .style("stroke-width", "2px")
+                    .style("opacity", 0.1)
+
+                labels
+                    .selectAll(".lines")
+                    .data(pie(d3.entries(chartData)))
+                    .enter()
+                    .append("path")
+                    .attr("id", d => d.data.value.name)
+                    .attr("d", d => {
+                        const [x, y] = labelArc.centroid(d)
+                        console.log('x,y', x, y);
+                        return lineFunc([{ x: 0, y: 0 }, { x: x, y: y }])
+                    })
+                    .attr("stroke", "gray")
+                    .style("stroke-width", "1px")
+
+
+                labels.selectAll(".labelsText")
+                    .data(pie(d3.entries(chartData)))
+                    .enter()
+                    .append("text")
+                    .attr("dx", d => {
+                        const [x, y] = labelArc.centroid(d)
+                        return x
+                    })
+                    .attr("dy", d => {
+                        const [x, y] = labelArc.centroid(d)
+                        return y
+                    })
+                    .text(function (d) { return d.data.value.name; })
+                    .style("text-anchor", "middle")
+                    .attr("transform", function (d) {
+                        // const [x, y] = labelArc.centroid(d)
+                        var locationData = this.getBBox();
+                        var x = locationData.x + (locationData.width / 2);
+                        var y = locationData.y + (locationData.height / 2);
+                        let angle = (Math.atan2(y, x) * 180) / Math.PI;
+
+                        console.log('angle: ', d.data.value.name, angle);
+
+                        if (angle > 90) angle = 180 + angle
+                        if (angle < -90 && angle > -180) angle = 180 + angle
+
+                        labels.append("circle")
+                            .style("fill", "red")
+                            .attr("r", 2)
+                            .attr("cx", x)
+                            .attr("cy", y);
+
+                        // console.log('centerX = ', x, y);
+
+                        var result = 'translate(' + x + ',' + y + ')';
+                        result += `rotate(${angle})`;
+                        result += 'translate(' + (-x) + ',' + (-y) + ')';
+                        return result;
+                    })
+                    .style("text-anchor", function (d) {
+                        var locationData = this.getBBox();
+                        var x = locationData.x + (locationData.width / 2);
+                        var y = locationData.y + (locationData.height / 2);
+                        let angle = (Math.atan2(y, x) * 180) / Math.PI;
+
+                        if (angle > 90) return "end"
+                        if (angle < -90 && angle > -180) return "end"
+                        return "start"
+                    })
+
+                // labels.selectAll(".donutText")
+                //     .data(pie(d3.entries(chartData)))
+                //     .enter().append("text")
+                //     .attr("class", "donutText")
+                //     //Move the labels below the arcs for slices with an end angle > than 90 degrees
+                //     .attr("dy", function (d, i) {
+                //         return (d.endAngle > 90 * Math.PI / 180 ? 18 : -11);
+                //     })
+                //     .append("textPath")
+                //     .attr("startOffset", "0%")
+                //     //.style("text-anchor", "middle")
+                //     .attr("xlink:href", function (d, i) { return "#" + d.data.value.name; })
+                //     .text(function (d) { return d.data.value.name; })
+
+            }
+        }
+    </script>
+</body>
+
+</html>
