@@ -132,11 +132,11 @@
 
 
                 const arc = d3.arc()
-                    .outerRadius(radius - 50)
+                    .outerRadius(radius - 5)
                     .innerRadius(radius);
 
                 const labelArc = d3.arc()
-                    .innerRadius(radius - 20)
+                    .innerRadius(radius + 20)
                     .outerRadius(radius)
 
                 // Compute the position of each group on the pie:
@@ -147,7 +147,7 @@
                 const pie = d3.pie()
                     .startAngle(-90 * Math.PI / 180)
                     .endAngle(-90 * Math.PI / 180 + 2 * Math.PI)
-                    .value(function (d) { return  d.value.size ; })
+                    .value(function (d) { return d.value.size; })
                     .padAngle(.01)
                     .sort(null);
 
@@ -165,11 +165,11 @@
                     .data(pie(d3.entries(chartData)))
                     .enter()
                     .append('path')
-                    .attr('d', arc
-                    )
-                    .attr("stroke", "black")
-                    .style("stroke-width", "2px")
-                    .style("opacity", 0.1)
+                    .attr('d', arc)
+                    .attr("stroke", "orange")
+                    .attr("fill", "orange")
+                    .style("stroke-width", "0px")
+                    .style("opacity", 1)
 
                 labels
                     .selectAll(".lines")
@@ -179,7 +179,6 @@
                     .attr("id", d => d.data.value.name)
                     .attr("d", d => {
                         const [x, y] = labelArc.centroid(d)
-                        console.log('x,y', x, y);
                         return lineFunc([{ x: 0, y: 0 }, { x: x, y: y }])
                     })
                     .attr("stroke", "gray")
