@@ -111,17 +111,14 @@
                     .style('stroke-width', 0.3)
 
                 svg.append("circle")
-                    .style("stroke", "gray")
+                    .style("stroke", "rgba(0,0,0,0.2)")
                     .style("stroke-width", "1")
                     .style("fill", "rgba(0,0,0,0)")
-                    .attr("r", radius - 20)
+                    .attr("r", radius - 1)
                     .attr("cx", width / 2)
                     .attr("cy", height / 2);
 
-
-
                 const cities = await d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-MDSXqcapGi1jsi_83jiLkIMLV38w43ad6iP3EWxNET9pORPp5AmInoQEM819EVED7dDdWgKMIpRx/pub?output=csv")
-
                 const chartData = Array.from(cities).map(i => {
                     return {
                         name: i.name, ...i, size: 10
@@ -162,7 +159,7 @@
                     .startAngle(-90 * Math.PI / 180)
                     .endAngle(-90 * Math.PI / 180 + 2 * Math.PI)
                     .value(1)
-                    .padAngle(.005)
+                    .padAngle(.005) // space between pies
                     .sort(null);
 
                 // prepare a helper function
@@ -175,16 +172,16 @@
                     .attr('class', 'labels')
                     .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
-                labels.selectAll('.whatever')
+                labels.selectAll('.pies')
                     .data(pie(sectors))
                     .enter()
                     .append('path')
                     .attr('d', arc(2))
+                    .attr('class', "pies")
                     .attr("stroke", "none")
-                    .attr("fill", "red")
+                    .attr("fill", d => d.data.color)
                     .style("stroke-width", "0px")
                     .style("opacity", d => {
-                        console.log('d', d);
                         return d.data.skipThisSector ? 0 : 1
                     })
 
@@ -200,7 +197,13 @@
                         const [x, y] = labelArc.centroid(d)
                         return y
                     })
-                    .text(function (d) { return d.data.value.name; })
+                    .text(function (d) {
+                        if (!d.data.value.skipThisSector) {
+                            return d.data.value.name
+                        } else {
+                            return;
+                        }
+                    })
                     .style("text-anchor", "middle")
                     .attr("transform", function (d) {
                         // const [x, y] = labelArc.centroid(d)
@@ -217,7 +220,6 @@
                         //     .attr("r", 2)
                         //     .attr("cx", x)
                         //     .attr("cy", y);
-
                         // console.log('centerX = ', x, y);
 
                         var result = 'translate(' + x + ',' + y + ')';
@@ -236,19 +238,23 @@
                         return "start"
                     })
 
-                // labels.selectAll(".donutText")
-                //     .data(pie(d3.entries(chartData)))
-                //     .enter().append("text")
-                //     .attr("class", "donutText")
-                //     //Move the labels below the arcs for slices with an end angle > than 90 degrees
-                //     .attr("dy", function (d, i) {
-                //         return (d.endAngle > 90 * Math.PI / 180 ? 18 : -11);
-                //     })
-                //     .append("textPath")
-                //     .attr("startOffset", "0%")
-                //     //.style("text-anchor", "middle")
-                //     .attr("xlink:href", function (d, i) { return "#" + d.data.value.name; })
-                //     .text(function (d) { return d.data.value.name; })
+                svg.selectAll('.cities')
+                    .data(pie(sectors.filter(s => s.skipThisSector === false)))
+                    .enter()
+                    .append("circle")
+                    .style("fill", "red")
+                    .attr("r", 2)
+                    .attr("cx", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[0]
+                    })
+                    .attr("cy", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[1]
+                    })
+
 
             }
         }
