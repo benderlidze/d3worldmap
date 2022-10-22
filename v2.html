@@ -56,22 +56,26 @@
 
     <div id="main">
         <div class="parent">
-            <div id="map4" class="child" style="width:800px; height:800px;"></div>
+            <div id="map" class="child" style="width:800px; height:800px;"></div>
         </div>
     </div>
 
     <script>
 
-        createMap("map4", 'Indicator 4')
+        createMap("map")
+
+        const mainData = {
+            cities: []
+        }
 
 
-
-        function createMap(divId, colummnId) {
+        function createMap(divId) {
 
             var svgDiv = document.getElementById(divId).getBoundingClientRect();
             let width = svgDiv.width;
             let height = svgDiv.height;
             const radius = width / 2 - 100
+
 
             const svg = d3.select("#" + divId)
                 .append('svg')
@@ -87,7 +91,7 @@
                 d => ready(null, d[0], d[1])
             );
 
-            async function ready(error, data, csvData) {
+            async function ready(error, data) {
 
                 data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
 
@@ -95,8 +99,6 @@
                 var path = d3.geoPath().projection(projection);
 
                 const country = {};
-                // console.log('csvData', csvData);
-                csvData.forEach(d => { country[d.ISO3] = +d[colummnId]; });
                 data.features.forEach(d => { d.val = country[d.id] });
 
                 svg.append('g')
@@ -180,6 +182,13 @@
                     .data(pie(sectors))
                     .enter()
                     .append("text")
+                    .attr("data-name", function (d) {
+                        if (!d.data.skipThisSector) {
+                            return d.data.name
+                        } else {
+                            return
+                        }
+                    })
                     .attr("dx", d => {
                         const [x, y] = labelArc.centroid(d)
                         return x
@@ -198,7 +207,7 @@
                     })
                     .style("text-anchor", "middle")
                     .attr("transform", function (d) {
-                        // const [x, y] = labelArc.centroid(d)
+                        //const [x, y] = labelArc.centroid(d)
                         var locationData = this.getBBox();
                         var x = locationData.x + (locationData.width / 2);
                         var y = locationData.y + (locationData.height / 2);
@@ -217,6 +226,12 @@
                         var result = 'translate(' + x + ',' + y + ')';
                         result += `rotate(${angle})`;
                         result += 'translate(' + (-x) + ',' + (-y) + ')';
+
+                        mainData.cities.push({
+                            ...d.data, x, y
+                        })
+
+
                         return result;
                     })
                     .style("text-anchor", function (d) {
@@ -269,21 +284,32 @@
 
 
                 var linkGen = d3.linkHorizontal();
-                var singleLinkData = { source: [25, 25], target: [75, 75] };
 
                 var multiLinkData = [
-                    { source: [50, 50], target: [175, 25] },
+                    { source: [0, 0], target: [180, 462] },
                     { source: [50, 50], target: [175, 50] },
                     { source: [50, 50], target: [175, 75] },
                 ];
 
-                labels
+                const linksData = mainData.cities.filter(c => !c.skipThisSector).map(c => {
+                    const coords = projection([+c.lng, +c.lat])
+                    return {
+                        source: coords,
+                        target: [c.x, c.y]
+                    }
+                })
+
+                console.log('linksData', linksData);
+
+                svg
                     .selectAll(".spath")
-                    .data(multiLinkData)
+                    .data(linksData)
                     .join("path")
                     .attr("d", linkGen)
                     .attr("fill", "none")
-                    .attr("stroke", "black");
+                    .attr("stroke", "black")
+
+
             }
         }
     </script>
