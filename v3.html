@@ -296,11 +296,11 @@
                 svg
                     .selectAll(".spath")
                     .data(linksData)
-                    .join("path")
-                    .attr("d", linkGen)
+                    .enter()
+                    .append("path")
                     .attr("fill", "none")
+                    .attr("d", linkGen)
                     .attr("stroke", d => {
-                        console.log('d', d);
                         return d.color
                     })
 
