@@ -111,8 +111,8 @@
                     .style('stroke-width', 0.3)
 
                 svg.append("circle")
-                    .style("stroke", "orange")
-                    .style("stroke-width", "2")
+                    .style("stroke", "gray")
+                    .style("stroke-width", "1")
                     .style("fill", "rgba(0,0,0,0)")
                     .attr("r", radius - 20)
                     .attr("cx", width / 2)
@@ -128,11 +128,21 @@
                     }
                 })
 
-                const sectors = [...Array(50)].map(i => {
+                //FILL ARRAY WITH DATA FROM SPREADHEET ????
+                const sectors = [...Array(80)].map((i, key) => {
+
+                    // let skipThisSector = false; // skip these sectors 
+                    // if ((key > 10 && key < 27) || (key > 51 && key < 68)) {
+                    // }
+
+                    const sectorData = cities.find(c => +c.id === key)
+                    let skipThisSector = sectorData ? false : true;
+
                     return {
-                        name: 1, size: 10
+                        name: key, size: 10, skipThisSector, ...sectorData
                     }
                 });
+
 
                 console.log('chartData', chartData);
                 console.log('sectors', sectors);
@@ -152,7 +162,7 @@
                     .startAngle(-90 * Math.PI / 180)
                     .endAngle(-90 * Math.PI / 180 + 2 * Math.PI)
                     .value(1)
-                    .padAngle(.01)
+                    .padAngle(.005)
                     .sort(null);
 
                 // prepare a helper function
@@ -166,41 +176,20 @@
                     .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
                 labels.selectAll('.whatever')
-                    .data(pie(d3.entries(chartData)))
-                    .enter()
-                    .append('path')
-                    .attr('d', arc())
-                    .attr("stroke", "orange")
-                    .attr("fill", "orange")
-                    .style("stroke-width", "0px")
-                    .style("opacity", 1)
-
-                labels.selectAll('.whatever')
-                    .data(pie(d3.entries([...Array(50)])))
+                    .data(pie(sectors))
                     .enter()
                     .append('path')
                     .attr('d', arc(2))
                     .attr("stroke", "none")
                     .attr("fill", "red")
                     .style("stroke-width", "0px")
-                    .style("opacity", 1)
-
-                labels
-                    .selectAll(".lines")
-                    .data(pie(d3.entries(chartData)))
-                    .enter()
-                    .append("path")
-                    .attr("id", d => d.data.value.name)
-                    .attr("d", d => {
-                        const [x, y] = labelArc.centroid(d)
-                        return lineFunc([{ x: 0, y: 0 }, { x: x, y: y }])
+                    .style("opacity", d => {
+                        console.log('d', d);
+                        return d.data.skipThisSector ? 0 : 1
                     })
-                    .attr("stroke", "gray")
-                    .style("stroke-width", "1px")
-
 
                 labels.selectAll(".labelsText")
-                    .data(pie(d3.entries(chartData)))
+                    .data(pie(d3.entries(sectors)))
                     .enter()
                     .append("text")
                     .attr("dx", d => {
@@ -220,16 +209,14 @@
                         var y = locationData.y + (locationData.height / 2);
                         let angle = (Math.atan2(y, x) * 180) / Math.PI;
 
-                        console.log('angle: ', d.data.value.name, angle);
-
                         if (angle > 90) angle = 180 + angle
                         if (angle < -90 && angle > -180) angle = 180 + angle
 
-                        labels.append("circle")
-                            .style("fill", "red")
-                            .attr("r", 2)
-                            .attr("cx", x)
-                            .attr("cy", y);
+                        // labels.append("circle")
+                        //     .style("fill", "red")
+                        //     .attr("r", 2)
+                        //     .attr("cx", x)
+                        //     .attr("cy", y);
 
                         // console.log('centerX = ', x, y);
 
