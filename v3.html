@@ -63,12 +63,9 @@
     <script>
 
         createMap("map")
-
         const mainData = {
             cities: []
         }
-
-
         function createMap(divId) {
 
             var svgDiv = document.getElementById(divId).getBoundingClientRect();
@@ -83,9 +80,8 @@
 
             Promise.all([
                 d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
-                d3.csv('data.csv')
             ]).then(
-                d => ready(null, d[0], d[1])
+                d => ready(null, d[0])
             );
 
             async function ready(error, data) {
@@ -145,6 +141,10 @@
                     .innerRadius(radius + 20)
                     .outerRadius(radius)
 
+                const labelArcCircle = d3.arc()
+                    .innerRadius(radius)
+                    .outerRadius(radius - 2)
+
                 const pie = d3.pie()
                     .startAngle(-90 * Math.PI / 180)
                     .endAngle(-90 * Math.PI / 180 + 2 * Math.PI)
@@ -160,7 +160,7 @@
 
                 const labels = svg.append('g')
                     .attr("class", "labels")
-                //  .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+                    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
                 labels.selectAll('.pies')
                     .data(pie(sectors))
@@ -192,19 +192,17 @@
                     })
                     .attr("dy", d => {
                         const [x, y] = labelArc.centroid(d)
-                        return y
+                        return y + 5
                     })
                     .text(function (d) {
                         if (!d.data.skipThisSector) {
                             return d.data.name
                         } else {
-                            //return d.data.name;
                             return
                         }
                     })
                     .style("text-anchor", "middle")
                     .attr("transform", function (d) {
-                        //const [x, y] = labelArc.centroid(d)
                         var locationData = this.getBBox();
                         var x = locationData.x + (locationData.width / 2);
                         var y = locationData.y + (locationData.height / 2);
@@ -212,22 +210,9 @@
 
                         if (angle > 90) angle = 180 + angle
                         if (angle < -90 && angle > -180) angle = 180 + angle
-
-                        // labels.append("circle")
-                        //     .style("fill", "red")
-                        //     .attr("r", 2)
-                        //     .attr("cx", x)
-                        //     .attr("cy", y);
-                        // console.log('centerX = ', x, y);
-
                         var result = 'translate(' + x + ',' + y + ')';
                         result += `rotate(${angle})`;
                         result += 'translate(' + (-x) + ',' + (-y) + ')';
-
-                        mainData.cities.push({
-                            ...d.data, x, y
-                        })
-
 
                         return result;
                     })
@@ -236,7 +221,6 @@
                         var x = locationData.x + (locationData.width / 2);
                         var y = locationData.y + (locationData.height / 2);
                         let angle = (Math.atan2(y, x) * 180) / Math.PI;
-
                         if (angle > 90) return "end"
                         if (angle < -90 && angle > -180) return "end"
                         return "start"
@@ -247,7 +231,7 @@
                     .enter()
                     .append("circle")
                     .attr("class", "cities")
-                    .style("fill", "red")
+                    .style("fill", d => d.data.color)
                     .attr("r", 3)
                     .attr("cx", d => {
                         const { lat, lng } = d.data
@@ -260,16 +244,50 @@
                         return coords[1]
                     })
 
+                svg.selectAll('.citiesOpacity')
+                    .data(pie(sectors.filter(s => s.skipThisSector === false)))
+                    .enter()
+                    .append("circle")
+                    .attr("class", "citiesOpacity")
+                    .style("fill", d => d.data.color)
+                    .style("opacity", 0.1)
+                    .attr("r", 20)
+                    .attr("cx", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[0]
+                    })
+                    .attr("cy", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[1]
+                    })
+
+
+                //CENTERS OF THE PIES SECTORS to draw line from 
+                const t = pie(sectors)
+                    .map(s => { return { ...s, center: labelArcCircle.centroid(s) } })
+                    .map(d => {
+                        // labels.append("circle")
+                        //     .style("fill", "red")
+                        //     .attr("r", 2)
+                        //     .attr("cx", d.center[0])
+                        //     .attr("cy", d.center[1]);
+                        const [x, y] = d.center
+                        mainData.cities.push({
+                            ...d.data, x: x, y: y
+                        })
+                    })
+
                 var linkGen = d3.linkHorizontal();
                 const linksData = mainData.cities.filter(c => !c.skipThisSector).map(c => {
                     const coords = projection([+c.lng, +c.lat])
                     return {
                         source: coords,
-                        target: [c.x, c.y]
+                        target: [c.x + width / 2, c.y + height / 2],
+                        color: c.color
                     }
                 })
-
-                console.log('linksData', linksData);
 
                 svg
                     .selectAll(".spath")
@@ -277,7 +295,10 @@
                     .join("path")
                     .attr("d", linkGen)
                     .attr("fill", "none")
-                    .attr("stroke", "black")
+                    .attr("stroke", d => {
+                        console.log('d', d);
+                        return d.color
+                    })
 
 
             }
