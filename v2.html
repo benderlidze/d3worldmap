@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Indicator test</title>
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v1.min.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
     <style>
@@ -125,25 +125,16 @@
                     }
                 })
 
-                //FILL ARRAY WITH DATA FROM SPREADHEET ????
                 const sectors = [...Array(80)].map((i, key) => {
-
-                    // let skipThisSector = false; // skip these sectors 
-                    // if ((key > 10 && key < 27) || (key > 51 && key < 68)) {
-                    // }
-
                     const sectorData = cities.find(c => +c.id === key)
                     let skipThisSector = sectorData ? false : true;
-
                     return {
                         name: key, size: 10, skipThisSector, ...sectorData
                     }
                 });
 
-
                 console.log('chartData', chartData);
                 console.log('sectors', sectors);
-
 
                 const arc = (offset = 5) => {
                     return d3.arc()
@@ -186,7 +177,7 @@
                     })
 
                 labels.selectAll(".labelsText")
-                    .data(pie(d3.entries(sectors)))
+                    .data(pie(sectors))
                     .enter()
                     .append("text")
                     .attr("dx", d => {
@@ -198,10 +189,11 @@
                         return y
                     })
                     .text(function (d) {
-                        if (!d.data.value.skipThisSector) {
-                            return d.data.value.name
+                        if (!d.data.skipThisSector) {
+                            return d.data.name
                         } else {
-                            return;
+                            //return d.data.name;
+                            return
                         }
                     })
                     .style("text-anchor", "middle")
@@ -242,6 +234,7 @@
                     .data(pie(sectors.filter(s => s.skipThisSector === false)))
                     .enter()
                     .append("circle")
+                    .attr("class", "cities")
                     .style("fill", "red")
                     .attr("r", 2)
                     .attr("cx", d => {
@@ -255,7 +248,42 @@
                         return coords[1]
                     })
 
+                // var data = [
+                //     { source: [100, 25], target: [200, 175] },
+                //     { source: [100, 25], target: [25, 175] }];
 
+                // // Horizontal link generator
+                // var link = d3.linkHorizontal()
+                //     .source(function (d) {
+                //         return [d.source[1], d.source[0]];
+                //     })
+                //     .target(function (d) {
+                //         return [d.target[1], d.target[0]];
+                //     });
+
+                // //Adding the link paths
+                // labels.selectAll(".path")
+                //     .data(data)
+                //     .append("path")
+                //     .attr("d", link)
+
+
+                var linkGen = d3.linkHorizontal();
+                var singleLinkData = { source: [25, 25], target: [75, 75] };
+
+                var multiLinkData = [
+                    { source: [50, 50], target: [175, 25] },
+                    { source: [50, 50], target: [175, 50] },
+                    { source: [50, 50], target: [175, 75] },
+                ];
+
+                labels
+                    .selectAll(".spath")
+                    .data(multiLinkData)
+                    .join("path")
+                    .attr("d", linkGen)
+                    .attr("fill", "none")
+                    .attr("stroke", "black");
             }
         }
     </script>
