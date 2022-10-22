@@ -88,7 +88,9 @@
 
                 data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
 
-                var projection = d3.geoMercator().fitSize([width, height], data);
+                var projection = d3.geoMercator().scale(100)
+                    .translate([width / 2, height / 2]);
+
                 var path = d3.geoPath().projection(projection);
 
                 const country = {};
@@ -98,12 +100,14 @@
                     .attr('class', 'countries')
                     .selectAll('path')
                     .data(data.features)
-                    .enter().append('path')
+                    .enter()
+                    .append('path')
                     .attr('d', path)
                     .style('fill', "#ccc")
                     .style('stroke', 'white')
                     .style('opacity', 0.8)
                     .style('stroke-width', 0.3)
+
 
                 svg.append("circle")
                     .style("stroke", "rgba(0,0,0,0.2)")
