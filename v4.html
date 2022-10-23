@@ -247,8 +247,6 @@
                     .append("circle")
                     .attr("class", "citiesOpacity")
                     .style("fill", d => d.data.color)
-                    .style("opacity", 0.1)
-                    .attr("r", 20)
                     .attr("cx", d => {
                         const { lat, lng } = d.data
                         const coords = projection([+lng, +lat])
@@ -259,7 +257,10 @@
                         const coords = projection([+lng, +lat])
                         return coords[1]
                     })
-
+                    .style("opacity", 0.1)
+                    .transition()
+                    .duration(2000)
+                    .attr("r", 20)
 
                 //CENTERS OF THE PIES SECTORS to draw line from 
                 const t = pie(sectors)
@@ -275,23 +276,48 @@
                 const linksData = mainData.cities.filter(c => !c.skipThisSector).map(c => {
                     const coords = projection([+c.lng, +c.lat])
                     return {
-                        source: coords,
-                        target: [c.x + width / 2, c.y + height / 2],
+                        target: coords,
+                        source: [c.x + width / 2, c.y + height / 2],
                         color: c.color
                     }
                 })
 
-                svg
-                    .selectAll(".spath")
-                    .data(linksData)
-                    .enter()
-                    .append("path")
-                    .attr("fill", "none")
-                    .attr("d", linkGen)
-                    .attr("stroke", d => {
-                        return d.color
-                    })
+                const paths = linksData.map(d => {
+                    return { path: linkGen(d), color: d.color }
+                })
+                console.log('paths', paths);
+                // svg
+                //     .selectAll(".spath")
+                //     .data(linksData)
+                //     .enter()
+                //     .append("path")
+                //     .attr("fill", "none")
+                //     .attr("d", d => {
+                //         console.log('d', d);
+                //         return linkGen(d)
+                //     })
+                //     .attr("stroke", d => {
+                //         return d.color
+                //     })
 
+                paths.map(path => {
+                    var path = svg.append("path")
+                        .attr("d", path.path)
+                        .attr("fill", "none")
+                        .attr("stroke-width", 2)
+                        .attr("stroke", path.color);
+
+                    const length = path.node().getTotalLength();
+
+                    // This function will animate the path over and over again
+                    // Animate the path by setting the initial offset and dasharray and then transition the offset to 0
+                    path.attr("stroke-dasharray", length + " " + length)
+                        .attr("stroke-dashoffset", length)
+                        .transition()
+                        .ease(d3.easeLinear)
+                        .attr("stroke-dashoffset", 0)
+                        .duration(3000)
+                })
 
             }
         }
