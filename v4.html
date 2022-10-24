@@ -195,7 +195,7 @@
                         if (!d.data.skipThisSector) {
                             return d.data.name
                         } else {
-                            return d.data.name
+                            return
                         }
                     })
                     .style("text-anchor", "middle")
@@ -300,17 +300,16 @@
                 //         return d.color
                 //     })
 
-                paths.map(path => {
+                paths.map(async (path) => {
+
+                    await delay(1000 * Math.random());//add random timing to line drawing
+
                     var path = svg.append("path")
                         .attr("d", path.path)
                         .attr("fill", "none")
                         .attr("stroke-width", 2)
                         .attr("stroke", path.color);
-
                     const length = path.node().getTotalLength();
-
-                    // This function will animate the path over and over again
-                    // Animate the path by setting the initial offset and dasharray and then transition the offset to 0
                     path.attr("stroke-dasharray", length + " " + length)
                         .attr("stroke-dashoffset", length)
                         .transition()
@@ -321,6 +320,8 @@
 
             }
         }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
     </script>
 </body>
 
