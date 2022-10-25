@@ -73,10 +73,15 @@
             let height = svgDiv.height;
             const radius = width / 2 - 100
 
-            const svg = d3.select("#" + divId)
-                .append('svg')
-                .attr('width', width)
-                .attr('height', height)
+            // const svg = d3.select("#" + divId)
+            //     .append('svg')
+            //     .attr('width', width)
+            //     .attr('height', height)
+
+            const svg = d3
+                .select("#map")
+                .append("svg")
+                .attr("viewBox", `0 0 ${width} ${height}`)
 
             Promise.all([
                 d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
