@@ -63,20 +63,17 @@
     <script>
 
         createMap("map")
-        const mainData = {
-            cities: []
-        }
+
         function createMap(divId) {
 
-            var svgDiv = document.getElementById(divId).getBoundingClientRect();
+            const mainData = {
+                cities: []
+            }
+
+            const svgDiv = document.getElementById(divId).getBoundingClientRect();
             let width = svgDiv.width;
             let height = svgDiv.height;
             const radius = width / 2 - 100
-
-            // const svg = d3.select("#" + divId)
-            //     .append('svg')
-            //     .attr('width', width)
-            //     .attr('height', height)
 
             const svg = d3
                 .select("#map")
@@ -136,9 +133,6 @@
                         name: key, size: 10, skipThisSector, ...sectorData
                     }
                 });
-
-                console.log('chartData', chartData);
-                console.log('sectors', sectors);
 
                 const arc = (offset = 5) => {
                     return d3.arc()
@@ -309,15 +303,15 @@
                     //return { path: linkGen(d), color: d.color }
                 })
 
-                paths.map(async (path) => {
+                paths.map(async (pathArc) => {
 
                     await delay(1000 * Math.random());//add random timing to line drawing
 
                     var path = svg.append("path")
-                        .attr("d", path.path)
+                        .attr("d", pathArc.path)
                         .attr("fill", "none")
                         .attr("stroke-width", 2)
-                        .attr("stroke", path.color);
+                        .attr("stroke", pathArc.color);
                     const length = path.node().getTotalLength();
                     path.attr("stroke-dasharray", length + " " + length)
                         .attr("stroke-dashoffset", length)
