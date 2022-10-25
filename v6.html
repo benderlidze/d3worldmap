@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicator test</title>
+
+    <style>
+        body,
+        html {
+            margin: 0px;
+            height: 0px;
+        }
+
+        .parent {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .child {
+            border: 1px solid #ccc;
+        }
+
+        div.tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+        }
+
+        .highlight {
+            fill: steelblue;
+        }
+
+        .hover {
+            fill: #69c !important;
+            stroke: #333 !important;
+            stroke-width: 2px !important;
+        }
+
+        .d3map {
+            border: 1px solid red;
+        }
+    </style>
+</head>
+
+
+<body>
+
+
+    <div id="main">
+        <div class="parent">
+            <div id="d3map" class="child" style="width:100%; height:100%; "></div>
+        </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+
+        createMap("d3map")
+
+        function createMap(divId) {
+
+            const mainData = {
+                cities: []
+            }
+
+            const svgDiv = document.getElementById(divId).getBoundingClientRect();
+            let width = 600;
+            let height = 600;
+            const radius = width / 3
+
+            const svg = d3
+                .select("#" + divId)
+                .append("svg")
+                .attr("viewBox", `0 0 ${width} ${height}`)
+
+            Promise.all([
+                d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
+            ]).then(
+                d => ready(null, d[0])
+            );
+
+            async function ready(error, data) {
+
+                data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
+
+                const projection = d3.geoMercator().scale(60)
+                    .translate([width / 2, height / 2 + 50]);
+
+                const path = d3.geoPath().projection(projection);
+
+                const country = {};
+                data.features.forEach(d => { d.val = country[d.id] });
+
+                svg.append('g')
+                    .attr('class', 'countries')
+                    .selectAll('path')
+                    .data(data.features)
+                    .enter()
+                    .append('path')
+                    .attr('d', path)
+                    .style('fill', "#ccc")
+                    .style('stroke', 'white')
+                    .style('opacity', 0.8)
+                    .style('stroke-width', 0.3)
+
+
+                svg.append("circle")
+                    .style("stroke", "rgba(0,0,0,0.2)")
+                    .style("stroke-width", "1")
+                    .style("fill", "rgba(0,0,0,0)")
+                    .attr("r", radius - 1)
+                    .attr("cx", width / 2)
+                    .attr("cy", height / 2);
+
+                const cities = await d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-MDSXqcapGi1jsi_83jiLkIMLV38w43ad6iP3EWxNET9pORPp5AmInoQEM819EVED7dDdWgKMIpRx/pub?gid=0&single=true&output=csv")
+                const chartData = Array.from(cities).map(i => {
+                    return {
+                        name: i.name, ...i, size: 10
+                    }
+                })
+
+                const continents = await d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-MDSXqcapGi1jsi_83jiLkIMLV38w43ad6iP3EWxNET9pORPp5AmInoQEM819EVED7dDdWgKMIpRx/pub?gid=599441243&single=true&output=csv")
+                const continentsData = Array.from(continents).map(i => {
+                    return {
+                        name: i.name, ...i, size: 10
+                    }
+                })
+
+                const sectors = [...Array(80)].map((i, key) => {
+                    const sectorData = cities.find(c => +c.id === key)
+                    let skipThisSector = sectorData ? false : true;
+                    return {
+                        name: key, size: 10, skipThisSector, ...sectorData
+                    }
+                });
+
+                const arc = (offset = 5) => {
+                    return d3.arc()
+                        .outerRadius(radius - offset)
+                        .innerRadius(radius)
+                }
+
+                const labelArc = d3.arc()
+                    .innerRadius(radius + 20)
+                    .outerRadius(radius)
+
+                const labelArcCircle = d3.arc()
+                    .innerRadius(radius)
+                    .outerRadius(radius - 2)
+
+                const pie = d3.pie()
+                    .startAngle(-90 * Math.PI / 180)
+                    .endAngle(-90 * Math.PI / 180 + 2 * Math.PI)
+                    .value(1)
+                    .padAngle(.0) // space between pies
+                    .sort(null);
+
+                // prepare a helper function
+                const lineFunc = d3.line()
+                    .x(function (d) { return d.x })
+                    .y(function (d) { return d.y })
+
+
+                const labels = svg.append('g')
+                    .attr("class", "labels")
+                    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+                labels.selectAll('.pies')
+                    .data(pie(sectors))
+                    .enter()
+                    .append('path')
+                    .attr('d', arc(2))
+                    .attr('class', "pies")
+                    .attr("stroke", "none")
+                    .attr("fill", d => d.data.color)
+                    .style("stroke-width", "0px")
+                    .style("opacity", d => {
+                        return d.data.skipThisSector ? 0 : 1
+                    })
+
+                svg
+                    .append("foreignObject")
+                    .attr("x", 170)
+                    .attr("y", 120)
+                    .attr("width", 180)
+                    .attr("height", 200)
+                    .append("xhtml:div")
+                    .html(`
+                        <div style="display: flex; flex-direction: column;    align-items: center;    max-width: 155px;">
+                            <div style="font-size:37px">35,000</div>
+                            <div style="font-size:15px; text-align: center;">Jobs in 30 US states and territories</div>
+                        </div>
+                    `)
+
+                svg
+                    .append("foreignObject")
+                    .attr("x", 220)
+                    .attr("y", 400)
+                    .attr("width", 180)
+                    .attr("height", 200)
+                    .append("xhtml:div")
+                    .html(`
+                        <div style="display: flex; flex-direction: column;    align-items: center;    max-width: 155px;">
+                            <div style="font-size:37px">15,000</div>
+                            <div style="font-size:15px; text-align: center;">Additional jobs worldwide</div>
+                        </div>
+                    `)
+
+
+                labels.selectAll(".labelsText")
+                    .data(pie(sectors))
+                    .enter()
+                    .append("text")
+                    .attr("dx", d => {
+                        const [x, y] = labelArc.centroid(d)
+                        return x
+                    })
+                    .attr("dy", d => {
+                        const [x, y] = labelArc.centroid(d)
+                        return y + 5
+                    })
+                    .text(function (d) {
+                        if (!d.data.skipThisSector) {
+                            return d.data.name
+                        } else {
+                            return d.data.name //Draw numbers around the circle
+                        }
+                    })
+                    .style("text-anchor", "middle")
+                    .attr("transform", function (d) {
+                        var locationData = this.getBBox();
+                        var x = locationData.x + (locationData.width / 2);
+                        var y = locationData.y + (locationData.height / 2);
+                        let angle = (Math.atan2(y, x) * 180) / Math.PI;
+
+                        if (angle > 90) angle = 180 + angle
+                        if (angle < -90 && angle > -180) angle = 180 + angle
+                        var result = 'translate(' + x + ',' + y + ')';
+                        result += `rotate(${angle})`;
+                        result += 'translate(' + (-x) + ',' + (-y) + ')';
+
+                        return result;
+                    })
+                    .style("text-anchor", function (d) {
+                        var locationData = this.getBBox();
+                        var x = locationData.x + (locationData.width / 2);
+                        var y = locationData.y + (locationData.height / 2);
+                        let angle = (Math.atan2(y, x) * 180) / Math.PI;
+                        if (angle > 90) return "end"
+                        if (angle < -90 && angle > -180) return "end"
+                        return "start"
+                    })
+                    .attr("fill", d => {
+                        return d.data.textColor
+                    })
+
+                svg.selectAll('.cities')
+                    .data(pie(sectors.filter(s => s.skipThisSector === false)))
+                    .enter()
+                    .append("circle")
+                    .attr("class", "cities")
+                    .style("fill", d => d.data.color)
+                    .attr("r", 3)
+                    .attr("cx", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[0]
+                    })
+                    .attr("cy", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[1]
+                    })
+
+
+                svg.selectAll('.citiesOpacity')
+                    .data(pie(sectors.filter(s => s.skipThisSector === false)))
+                    .enter()
+                    .append("circle")
+                    .attr("class", "citiesOpacity")
+                    .style("fill", d => d.data.color)
+                    .attr("cx", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[0]
+                    })
+                    .attr("cy", d => {
+                        const { lat, lng } = d.data
+                        const coords = projection([+lng, +lat])
+                        return coords[1]
+                    })
+                    .style("opacity", 0.1)
+                    .transition()
+                    .duration(2000)
+                    .attr("r", d => d.data.circleRadius)
+
+                svg.selectAll('.continentsData')
+                    .data(continentsData)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "continentsData")
+                    .style("fill", d => {
+                        return d.color
+                    })
+                    .attr("cx", d => {
+                        const { lat, lng } = d
+                        const coords = projection([+lng, +lat])
+                        return coords[0]
+                    })
+                    .attr("cy", d => {
+                        const { lat, lng } = d
+                        const coords = projection([+lng, +lat])
+                        return coords[1]
+                    })
+                    .style("opacity", d => d.opacity)
+                    .transition()
+                    .duration(2000)
+                    .attr("r", d => d.radius)
+
+                //CENTERS OF THE PIES SECTORS to draw line from 
+                const t = pie(sectors)
+                    .map(s => { return { ...s, center: labelArcCircle.centroid(s) } })
+                    .map(d => {
+                        const [x, y] = d.center
+                        mainData.cities.push({
+                            ...d.data, x: x, y: y
+                        })
+                    })
+
+                var linkGen = d3.linkHorizontal();
+                const linksData = mainData.cities.filter(c => !c.skipThisSector).map(c => {
+                    const coords = projection([+c.lng, +c.lat])
+                    return {
+                        source: coords,
+                        target: [c.x + width / 2, c.y + height / 2],
+                        color: c.color
+                    }
+                })
+
+                const paths = linksData.map(d => {
+                    const { target, source } = d
+                    const x1 = source[0]
+                    const y1 = source[1]
+                    const x2 = target[0]
+                    const y2 = target[1]
+                    const lineCurvature = 2
+
+                    var dx = x2 - x1,
+                        dy = y2 - y1,
+                        dr = Math.sqrt(dx * dx + dy * dy) * lineCurvature;
+
+                    const pathArc = "M" + x1 + "," + y1 + "A" + dr + "," + dr +
+                        " 0 0,1 " + x2 + "," + y2;
+
+                    return { path: pathArc, color: d.color }
+                    //return { path: linkGen(d), color: d.color }
+                })
+
+                paths.map(async (pathArc) => {
+
+                    await delay(1000 * Math.random());//add random timing to line drawing
+
+                    var path = svg.append("path")
+                        .attr("d", pathArc.path)
+                        .attr("fill", "none")
+                        .attr("stroke-width", 2)
+                        .attr("stroke", pathArc.color);
+                    const length = path.node().getTotalLength();
+                    path.attr("stroke-dasharray", length + " " + length)
+                        .attr("stroke-dashoffset", length)
+                        .transition()
+                        .ease(d3.easeLinear)
+                        .attr("stroke-dashoffset", 0)
+                        .duration(3000)
+                })
+
+            }
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+    </script>
+</body>
+
+</html>
