@@ -222,6 +222,9 @@
                         if (angle < -90 && angle > -180) return "end"
                         return "start"
                     })
+                    .attr("fill", d => {
+                        return d.data.textColor
+                    })
 
                 svg.selectAll('.cities')
                     .data(pie(sectors.filter(s => s.skipThisSector === false)))
@@ -260,7 +263,7 @@
                     .style("opacity", 0.1)
                     .transition()
                     .duration(2000)
-                    .attr("r", 20)
+                    .attr("r", d => d.data.circleRadius)
 
                 //CENTERS OF THE PIES SECTORS to draw line from 
                 const t = pie(sectors)
@@ -276,29 +279,30 @@
                 const linksData = mainData.cities.filter(c => !c.skipThisSector).map(c => {
                     const coords = projection([+c.lng, +c.lat])
                     return {
-                        target: coords,
-                        source: [c.x + width / 2, c.y + height / 2],
+                        source: coords,
+                        target: [c.x + width / 2, c.y + height / 2],
                         color: c.color
                     }
                 })
 
                 const paths = linksData.map(d => {
-                    return { path: linkGen(d), color: d.color }
+                    const { target, source } = d
+                    const x1 = source[0]
+                    const y1 = source[1]
+                    const x2 = target[0]
+                    const y2 = target[1]
+                    const lineCurvature = 2
+
+                    var dx = x2 - x1,
+                        dy = y2 - y1,
+                        dr = Math.sqrt(dx * dx + dy * dy) * lineCurvature;
+
+                    const pathArc = "M" + x1 + "," + y1 + "A" + dr + "," + dr +
+                        " 0 0,1 " + x2 + "," + y2;
+
+                    return { path: pathArc, color: d.color }
+                    //return { path: linkGen(d), color: d.color }
                 })
-                console.log('paths', paths);
-                // svg
-                //     .selectAll(".spath")
-                //     .data(linksData)
-                //     .enter()
-                //     .append("path")
-                //     .attr("fill", "none")
-                //     .attr("d", d => {
-                //         console.log('d', d);
-                //         return linkGen(d)
-                //     })
-                //     .attr("stroke", d => {
-                //         return d.color
-                //     })
 
                 paths.map(async (path) => {
 
