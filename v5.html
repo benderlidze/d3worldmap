@@ -5,16 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Indicator test</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://d3js.org/topojson.v1.min.js"></script>
-    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    
     <style>
         body,
         html {
             margin: 0px;
             height: 0px;
         }
-
+        
         .parent {
             display: flex;
             flex-direction: row;
@@ -23,11 +21,11 @@
             align-items: center;
             height: 100vh;
         }
-
+        
         .child {
             border: 1px solid #ccc;
         }
-
+        
         div.tooltip {
             position: absolute;
             text-align: center;
@@ -41,7 +39,7 @@
         .highlight {
             fill: steelblue;
         }
-
+        
         .hover {
             fill: #69c !important;
             stroke: #333 !important;
@@ -52,17 +50,18 @@
 
 
 <body>
-
-
+    
+    
     <div id="main">
         <div class="parent">
-            <div id="map" class="child" style="width:800px; height:800px;"></div>
+            <div id="d3map" class="child" style="width:100%; height:800px;"></div>
         </div>
     </div>
-
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
 
-        createMap("map")
+        createMap("d3map")
 
         function createMap(divId) {
 
@@ -76,7 +75,7 @@
             const radius = width / 2 - 100
 
             const svg = d3
-                .select("#map")
+                .select("#" + divId)
                 .append("svg")
                 .attr("viewBox", `0 0 ${width} ${height}`)
 
