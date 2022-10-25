@@ -191,28 +191,28 @@
                 svg
                     .append("foreignObject")
                     .attr("x", 170)
-                    .attr("y", 120)
+                    .attr("y", 130)
                     .attr("width", 180)
                     .attr("height", 200)
                     .append("xhtml:div")
                     .html(`
-                        <div style="display: flex; flex-direction: column;    align-items: center;    max-width: 155px;">
-                            <div style="font-size:37px">35,000</div>
-                            <div style="font-size:15px; text-align: center;">Jobs in 30 US states and territories</div>
+                        <div style="display: flex; flex-direction: column;  font-size: 14px;   line-height: 1;   align-items: center;    max-width: 155px;">
+                            <div style="font-size:30px">35,000</div>
+                            <div style="font-size:12px; text-align: center;">Jobs in 30 US states and territories</div>
                         </div>
                     `)
 
                 svg
                     .append("foreignObject")
                     .attr("x", 220)
-                    .attr("y", 400)
+                    .attr("y", 430)
                     .attr("width", 180)
                     .attr("height", 200)
                     .append("xhtml:div")
                     .html(`
-                        <div style="display: flex; flex-direction: column;    align-items: center;    max-width: 155px;">
-                            <div style="font-size:37px">15,000</div>
-                            <div style="font-size:15px; text-align: center;">Additional jobs worldwide</div>
+                        <div style="display: flex; flex-direction: column; font-size: 14px;    line-height: 1;   align-items: center;    max-width: 155px;">
+                            <div style="font-size:30px">15,000</div>
+                            <div style="font-size:12px; text-align: center;">Additional jobs worldwide</div>
                         </div>
                     `)
 
@@ -233,7 +233,7 @@
                         if (!d.data.skipThisSector) {
                             return d.data.name
                         } else {
-                            return d.data.name //Draw numbers around the circle
+                            return  //Draw numbers around the circle
                         }
                     })
                     .style("text-anchor", "middle")
@@ -263,6 +263,8 @@
                     .attr("fill", d => {
                         return d.data.textColor
                     })
+                    .style("font-size", "12px")
+
 
                 svg.selectAll('.cities')
                     .data(pie(sectors.filter(s => s.skipThisSector === false)))
@@ -373,7 +375,7 @@
                     var path = svg.append("path")
                         .attr("d", pathArc.path)
                         .attr("fill", "none")
-                        .attr("stroke-width", 2)
+                        .attr("stroke-width", 1)
                         .attr("stroke", pathArc.color);
                     const length = path.node().getTotalLength();
                     path.attr("stroke-dasharray", length + " " + length)
