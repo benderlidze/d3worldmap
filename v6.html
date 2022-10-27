@@ -109,7 +109,7 @@
 
             async function ready(error, data) {
 
-                data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
+                data.features = data.features.filter(d =>  d.id !== "ATA") //remove GRL and ATA from map 
 
                 const projection = d3.geoMiller().scale(60)
                     .translate([width / 2, height / 2 + 50]);
@@ -290,7 +290,7 @@
                     .append("circle")
                     .attr("class", "cities")
                     .style("fill", d => d.data.color)
-                    .attr("r", 3)
+                    .attr("r", 2)
                     .attr("cx", d => {
                         const { lat, lng } = d.data
                         const coords = projection([+lng, +lat])
