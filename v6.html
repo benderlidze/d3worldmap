@@ -109,7 +109,7 @@
 
             async function ready(error, data) {
 
-                data.features = data.features.filter(d =>  d.id !== "ATA") //remove GRL and ATA from map 
+                data.features = data.features.filter(d => d.id !== "ATA") //remove GRL and ATA from map 
 
                 const projection = d3.geoMiller().scale(60)
                     .translate([width / 2, height / 2 + 50]);
@@ -319,7 +319,9 @@
                         const coords = projection([+lng, +lat])
                         return coords[1]
                     })
-                    .style("opacity", 0.1)
+                    .style("opacity", d => {
+                        return d.data.opacity
+                    })
                     .transition()
                     .duration(2000)
                     .attr("r", d => d.data.circleRadius)
