@@ -49,12 +49,29 @@
         .d3map {
             border: 1px solid red;
         }
+
+        .map-title {
+            font-size: 30px
+        }
+
+        .map-text {
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .map-text-container {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            line-height: 1;
+            align-items: center;
+            max-width: 155px;
+        }
     </style>
 </head>
 
 
 <body>
-
 
     <div id="main">
         <div class="parent">
@@ -63,6 +80,7 @@
     </div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
     <script>
 
         createMap("d3map")
@@ -93,7 +111,7 @@
 
                 data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
 
-                const projection = d3.geoMercator().scale(60)
+                const projection = d3.geoMiller().scale(60)
                     .translate([width / 2, height / 2 + 50]);
 
                 const path = d3.geoPath().projection(projection);
@@ -191,28 +209,28 @@
                 svg
                     .append("foreignObject")
                     .attr("x", 170)
-                    .attr("y", 130)
+                    .attr("y", 140)
                     .attr("width", 180)
                     .attr("height", 200)
                     .append("xhtml:div")
                     .html(`
-                        <div style="display: flex; flex-direction: column;  font-size: 14px;   line-height: 1;   align-items: center;    max-width: 155px;">
-                            <div style="font-size:30px">35,000</div>
-                            <div style="font-size:12px; text-align: center;">Jobs in 30 US states and territories</div>
+                        <div class="map-text-container">
+                            <div class="map-title">35,000</div>
+                            <div class="map-text">Jobs in 30 US states and territories</div>
                         </div>
                     `)
 
                 svg
                     .append("foreignObject")
                     .attr("x", 220)
-                    .attr("y", 430)
+                    .attr("y", 420)
                     .attr("width", 180)
                     .attr("height", 200)
                     .append("xhtml:div")
                     .html(`
-                        <div style="display: flex; flex-direction: column; font-size: 14px;    line-height: 1;   align-items: center;    max-width: 155px;">
-                            <div style="font-size:30px">15,000</div>
-                            <div style="font-size:12px; text-align: center;">Additional jobs worldwide</div>
+                        <div class="map-text-container">
+                            <div class="map-title">15,000</div>
+                            <div class="map-text">Additional jobs worldwide</div>
                         </div>
                     `)
 
@@ -369,13 +387,11 @@
                 })
 
                 paths.map(async (pathArc) => {
-
                     await delay(1000 * Math.random());//add random timing to line drawing
-
                     var path = svg.append("path")
                         .attr("d", pathArc.path)
                         .attr("fill", "none")
-                        .attr("stroke-width", 1)
+                        .attr("stroke-width", 0.7)
                         .attr("stroke", pathArc.color);
                     const length = path.node().getTotalLength();
                     path.attr("stroke-dasharray", length + " " + length)
